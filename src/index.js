@@ -32,22 +32,6 @@ class Board extends React.Component {
   }
 }
 
-function YouAre(props) {
-  return (
-    <button className={props.format} onClick={props.onClick} >
-      {props.value}
-    </button>
-  );
-}
-
-function StartFirst(props) {
-  return (
-    <button className={props.format} onClick={props.onClick} >
-      {props.value}
-    </button>
-  );
-}
-
 class Game extends React.Component {
   constructor(props) {
     super(props);
@@ -186,9 +170,9 @@ class Game extends React.Component {
 
     let playerStatus;
     if (this.state.xIsPlayer) {
-      playerStatus = 'Player: X';
+      playerStatus = 'X';
     } else {
-      playerStatus = 'Player: O';
+      playerStatus = 'O';
     }
     let status;
     if (winner) {
@@ -208,19 +192,42 @@ class Game extends React.Component {
             <tr><th>Tic Tac Toe</th></tr>
             <tr><td>
               <div className="game-controller">
-              <div onChange={this.setPlayer.bind(this)}>
-                You are:
-                <input type="radio" value="0" name="xIsPlayer" checked={!this.state.xIsPlayerSet} disabled={this.isStarted()}/> O
-                <input type="radio" value="1" name="xIsPlayer" checked={this.state.xIsPlayerSet} disabled={this.isStarted()}/> X
-              </div>
-              <div onChange={this.setFirst.bind(this)}>
-                Start first:
-                <input type="radio" value="0" name="xIsFirst" checked={!this.state.xIsFirstSet} disabled={this.isStarted()}/> O
-                <input type="radio" value="1" name="xIsFirst" checked={this.state.xIsFirstSet} disabled={this.isStarted()}/> X
-              </div>
-
-              <button className="game-start" onClick={() => this.startGame()} disabled={this.isStarted()}>Start</button>
-              <button className="game-start" onClick={() => this.endGame()} disabled={!this.isStarted()}>End</button>
+                <table>
+                  <thead>
+                    <tr><th>
+                      Game Setting
+                    </th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>
+                      <div onChange={this.setPlayer.bind(this)}>
+                        You are:
+                        <input type="radio" value="0" name="xIsPlayer" checked={!this.state.xIsPlayerSet} disabled={this.isStarted()}/> O
+                        <input type="radio" value="1" name="xIsPlayer" checked={this.state.xIsPlayerSet} disabled={this.isStarted()}/> X
+                      </div>
+                    </td></tr>
+                    <tr><td>
+                      <div onChange={this.setFirst.bind(this)}>
+                        Start first:
+                        <input type="radio" value="0" name="xIsFirst" checked={!this.state.xIsFirstSet} disabled={this.isStarted()}/> O
+                        <input type="radio" value="1" name="xIsFirst" checked={this.state.xIsFirstSet} disabled={this.isStarted()}/> X
+                      </div>
+                    </td></tr>
+                  </tbody>
+                  <thead>
+                    <tr><th>
+                      Game Control
+                    </th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>
+                      <div>
+                        <button className="game-start" onClick={() => this.startGame()} disabled={this.isStarted()}>Start</button>
+                        <button className="game-start" onClick={() => this.endGame()} disabled={!this.isStarted()}>End</button>
+                      </div>
+                    </td></tr>
+                  </tbody>
+                </table>
               </div>
             </td></tr>
             <tr><td>
@@ -230,10 +237,28 @@ class Game extends React.Component {
             </td></tr>
             <tr><td>
               <div className="game-info">
-                <div>{playerStatus}</div>
-                <div>{status}</div>
-                History:
-                {moveHistory}
+                <table>
+                  <thead>
+                    <tr><th>
+                      Status
+                    </th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>
+                      {status}
+                    </td></tr>
+                  </tbody>
+                  <thead>
+                    <tr><th>
+                      History:
+                    </th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>
+                      {moveHistory}
+                    </td></tr>
+                  </tbody>
+                </table>
               </div>
             </td></tr>
           </tbody>
@@ -297,12 +322,12 @@ function minimax(maxPlayer, currPlayer, squares) {
 
   var list = [];
   if (maxPlayer === currPlayer) {
-    var maxValue = -99999
-    for (var index = 0; index < squares.length; index++) {
+    let maxValue = -99999
+    for (let index = 0; index < squares.length; index++) {
       if (squares[index] === null) {
-        var tempSquares = squares.slice();
+        let tempSquares = squares.slice();
         tempSquares[index] = currPlayer
-        var possibleList = minimax(maxPlayer, otherPlayer, tempSquares)
+        let possibleList = minimax(maxPlayer, otherPlayer, tempSquares)
         if (possibleList[0][0] > maxValue) {
           list = []
           maxValue = possibleList[0][0]
@@ -314,12 +339,12 @@ function minimax(maxPlayer, currPlayer, squares) {
     }
     //console.log("maximax," + maxValue);
   } else {
-    var minValue = 99999
-    for (var index = 0; index < squares.length; index++) {
+    let minValue = 99999
+    for (let index = 0; index < squares.length; index++) {
       if (squares[index] === null) {
-        var tempSquares = squares.slice();
+        let tempSquares = squares.slice();
         tempSquares[index] = currPlayer
-        var possibleList = minimax(maxPlayer, otherPlayer, tempSquares)
+        let possibleList = minimax(maxPlayer, otherPlayer, tempSquares)
         if (possibleList[0][0] < minValue) {
           list = []
           minValue = possibleList[0][0]
@@ -335,8 +360,8 @@ function minimax(maxPlayer, currPlayer, squares) {
 }
 
 function alphabetaPrunning(maxPlayer, currPlayer, alpha, beta, squares) {
-  var otherPlayer = (currPlayer === 'X') ? 'O' : 'X';
-  var winner = calculateWinner(squares);
+  let otherPlayer = (currPlayer === 'X') ? 'O' : 'X';
+  let winner = calculateWinner(squares);
   if (winner === maxPlayer) {
     return [[1, -1]];
   } else if (winner !== null) {
@@ -345,14 +370,14 @@ function alphabetaPrunning(maxPlayer, currPlayer, alpha, beta, squares) {
     return [[0, -1]];
   }
 
-  var list = [];
+  let list = [];
   if (maxPlayer === currPlayer) {
-    var maxValue = -99999
-    for (var index = 0; index < squares.length; index++) {
+    let maxValue = -99999
+    for (let index = 0; index < squares.length; index++) {
       if (squares[index] === null) {
-        var tempSquares = squares.slice();
+        let tempSquares = squares.slice();
         tempSquares[index] = currPlayer
-        var possibleList = alphabetaPrunning(maxPlayer, otherPlayer, alpha, beta, tempSquares)
+        let possibleList = alphabetaPrunning(maxPlayer, otherPlayer, alpha, beta, tempSquares)
         if (possibleList[0][0] > maxValue) {
           list = []
           maxValue = possibleList[0][0]
@@ -369,12 +394,12 @@ function alphabetaPrunning(maxPlayer, currPlayer, alpha, beta, squares) {
       }
     }
   } else {
-    var minValue = 99999
-    for (var index = 0; index < squares.length; index++) {
+    let minValue = 99999
+    for (let index = 0; index < squares.length; index++) {
       if (squares[index] === null) {
-        var tempSquares = squares.slice();
+        let tempSquares = squares.slice();
         tempSquares[index] = currPlayer
-        var possibleList = alphabetaPrunning(maxPlayer, otherPlayer, alpha, beta, tempSquares)
+        let possibleList = alphabetaPrunning(maxPlayer, otherPlayer, alpha, beta, tempSquares)
         if (possibleList[0][0] < minValue) {
           list = []
           minValue = possibleList[0][0]
