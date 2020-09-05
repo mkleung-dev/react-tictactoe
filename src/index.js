@@ -161,10 +161,18 @@ class Game extends React.Component {
     const current = history[this.state.stepNumber];
     const winner = calculateWinner(current.squares);
 
+    const xIsFirst = this.state.xIsFirstSet;
     const moves = history.map((_step, move) => {
+      var first = 'O';
+      if (xIsFirst && (move % 2 === 1)) {
+        first = 'X';
+      }
+      if (!xIsFirst && (move % 2 === 0)) {
+        first = 'X';
+      }
       const stepFormat = move === this.state.stepNumber ? 'currStep' : 'nonCurrStep'
       const desc = move ?
-        'Go to move ' + move + ' (' + history[move].motion % 3 + ',' + parseInt(history[move].motion / 3, 10) + ')':
+        'Go to move ' + move + ' ' + first + ' (' + history[move].motion % 3 + ',' + parseInt(history[move].motion / 3, 10) + ')':
         'Go to game start';
       return (
           <li key={move}>
