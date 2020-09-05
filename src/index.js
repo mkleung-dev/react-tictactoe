@@ -32,6 +32,22 @@ class Board extends React.Component {
   }
 }
 
+function YouAre(props) {
+  return (
+    <button className={props.format} onClick={props.onClick} >
+      {props.value}
+    </button>
+  );
+}
+
+function StartFirst(props) {
+  return (
+    <button className={props.format} onClick={props.onClick} >
+      {props.value}
+    </button>
+  );
+}
+
 class Game extends React.Component {
   constructor(props) {
     super(props);
@@ -41,20 +57,67 @@ class Game extends React.Component {
       }],
       formats: Array(9).fill('square'),
       stepNumber: 0,
-      xIsNext: false,
+      xIsNext: true,
+      xIsPlayer: false,
+      xIsFirstSet: false,
+      xIsPlayerSet: false,
+      intervalTimer: null
     };
-    setInterval(() => {
-      if (!this.state.xIsNext) {
-        //var list = alphabetaPrunning('0', '0',  -99999, 99999, this.state.history[this.state.stepNumber].squares);
-        var list = minimax('0', '0',  this.state.history[this.state.stepNumber].squares);
-        var index = Math.floor(Math.random() * list.length);
-        this.handleClick(list[index][1]);
-      }
-    }, 100);
+  }
+
+  setPlayer(event) {
+    this.setState({
+      xIsPlayerSet: event.target.value === '1'
+    });
+  }
+  setFirst(event) {
+    this.setState({
+      xIsFirstSet: event.target.value === '1'
+    });
+  }
+
+
+  isStarted() {
+    return (null !== this.state.intervalTimer);
+  }
+
+  startGame() {
+    this.setState({
+      history: [{
+        squares: Array(9).fill(null),
+      }],
+      formats: Array(9).fill('square'),
+      stepNumber: 0,
+      xIsNext: this.state.xIsFirstSet,
+      xIsPlayer: this.state.xIsPlayerSet
+    });
+
+    if (!this.state.intervalTimer) {
+      this.setState({
+        intervalTimer: setInterval(() => {
+          if ((!this.state.xIsNext && this.state.xIsPlayer) || (this.state.xIsNext && !this.state.xIsPlayer)) {
+            var p = this.state.xIsPlayer ? 'O' : 'X';
+            //var list = alphabetaPrunning(p, p,  -99999, 99999, this.state.history[this.state.stepNumber].squares);
+            var list = minimax(p, p,  this.state.history[this.state.stepNumber].squares);
+            var index = Math.floor(Math.random() * list.length);
+            this.handleClick(list[index][1]);
+          }
+        }, 100)
+      });
+    }
+  }
+
+  endGame() {
+    if (null !== this.state.intervalTimer) {
+      clearInterval(this.state.intervalTimer);
+      this.setState({
+        intervalTimer: null
+      });
+    }
   }
 
   handleManualClick(i) {
-    if (this.state.xIsNext) {
+    if ((this.state.xIsNext && this.state.xIsPlayer) || (!this.state.xIsNext && !this.state.xIsPlayer)) {
       this.handleClick(i)
     }
   }
@@ -66,7 +129,7 @@ class Game extends React.Component {
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
-    squares[i] = this.state.xIsNext ? 'X' : '0';
+    squares[i] = this.state.xIsNext ? 'X' : 'O';
     this.setState({
       history: history.concat([{
         squares: squares,
@@ -79,10 +142,16 @@ class Game extends React.Component {
   }
 
   jumpTo(step) {
+    if ((step - this.state.stepNumber) % 2 === 0) {
+    } else {
+      this.setState({
+        xIsNext: !this.state.xIsNext,
+      });
+
+    }
     this.setState({
       formats: highlightWinner(this.state.history[step].squares),
-      stepNumber: step,
-      xIsNext: (step % 2) === 0,
+      stepNumber: step
     });
   }
 
@@ -95,7 +164,7 @@ class Game extends React.Component {
     const moves = history.map((_step, move) => {
       const stepFormat = move === this.state.stepNumber ? 'currStep' : 'nonCurrStep'
       const desc = move ?
-        'Go to move #' + move + ' (' + history[move].motion % 3 + ',' + parseInt(history[move].motion / 3, 10) + ')':
+        'Go to move ' + move + ' (' + history[move].motion % 3 + ',' + parseInt(history[move].motion / 3, 10) + ')':
         'Go to game start';
       return (
           <li key={move}>
@@ -107,24 +176,60 @@ class Game extends React.Component {
     let moveHistory = []
     moveHistory.push(<ol>{moves}</ol>)
 
+    let playerStatus;
+    if (this.state.xIsPlayer) {
+      playerStatus = 'Player: X';
+    } else {
+      playerStatus = 'Player: O';
+    }
     let status;
     if (winner) {
       status = 'Winner: ' + winner;
+      this.endGame();
     } else if (checkDraw(current.squares)) {
       status = 'Draw';
+      this.endGame();
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
     }
 
     return (
       <div className="game">
-        <div className="game-board">
-          <Board squares={current.squares} formats={formats} onClick={(i) => this.handleManualClick(i)} />
-        </div>
-        <div className="game-info">
-          <div>{status}</div>
-          {moveHistory}
-        </div>
+        <table>
+          <tbody>
+            <tr><th>Tic Tac Toe</th></tr>
+            <tr><td>
+              <div className="game-controller">
+              <div onChange={this.setPlayer.bind(this)}>
+                You are:
+                <input type="radio" value="0" name="xIsPlayer" checked={!this.state.xIsPlayerSet} disabled={this.isStarted()}/> O
+                <input type="radio" value="1" name="xIsPlayer" checked={this.state.xIsPlayerSet} disabled={this.isStarted()}/> X
+              </div>
+              <div onChange={this.setFirst.bind(this)}>
+                Start first:
+                <input type="radio" value="0" name="xIsFirst" checked={!this.state.xIsFirstSet} disabled={this.isStarted()}/> O
+                <input type="radio" value="1" name="xIsFirst" checked={this.state.xIsFirstSet} disabled={this.isStarted()}/> X
+              </div>
+
+              <button className="game-start" onClick={() => this.startGame()} disabled={this.isStarted()}>Start</button>
+              <button className="game-start" onClick={() => this.endGame()} disabled={!this.isStarted()}>End</button>
+              </div>
+            </td></tr>
+            <tr><td>
+              <div className="game-board">
+                <Board squares={current.squares} formats={formats} onClick={(i) => this.handleManualClick(i)} />
+              </div>
+            </td></tr>
+            <tr><td>
+              <div className="game-info">
+                <div>{playerStatus}</div>
+                <div>{status}</div>
+                History:
+                {moveHistory}
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
       </div>
     );
   }
@@ -157,15 +262,29 @@ function calculateWinner(squares) {
   return null;
 }
 
+function printBoard(squares) {
+  var boardString = ""
+  for (let i = 0; i < squares.length; i++) {
+    if (squares[i] == null) {
+      boardString = boardString + " ";
+    } else {
+      boardString = boardString + squares[i];
+    }
+    if (i % 3 === 2) {
+      boardString = boardString + "\n";
+    }
+  }
+}
+
 function minimax(maxPlayer, currPlayer, squares) {
-  var otherPlayer = (currPlayer === 'X') ? '0' : 'X';
+  var otherPlayer = (currPlayer === 'X') ? 'O' : 'X';
   var winner = calculateWinner(squares);
   if (winner === maxPlayer) {
     return [[1, -1]];
-  } else if (checkDraw(squares)) {
-    return [[0, -1]];
   } else if (winner !== null) {
     return [[-1, -1]];
+  } else if (checkDraw(squares)) {
+    return [[0, -1]];
   }
 
   var list = [];
@@ -185,6 +304,7 @@ function minimax(maxPlayer, currPlayer, squares) {
         }
       }
     }
+    //console.log("maximax," + maxValue);
   } else {
     var minValue = 99999
     for (var index = 0; index < squares.length; index++) {
@@ -201,19 +321,20 @@ function minimax(maxPlayer, currPlayer, squares) {
         }
       }
     }
+    //console.log("minimax," + minValue);
   }
   return list;
 }
 
 function alphabetaPrunning(maxPlayer, currPlayer, alpha, beta, squares) {
-  var otherPlayer = (currPlayer === 'X') ? '0' : 'X';
+  var otherPlayer = (currPlayer === 'X') ? 'O' : 'X';
   var winner = calculateWinner(squares);
   if (winner === maxPlayer) {
     return [[1, -1]];
-  } else if (checkDraw(squares)) {
-    return [[0, -1]];
   } else if (winner !== null) {
     return [[-1, -1]];
+  } else if (checkDraw(squares)) {
+    return [[0, -1]];
   }
 
   var list = [];
