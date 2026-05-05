@@ -4,7 +4,12 @@ import './index.css';
 
 function Square(props) {
   return (
-    <button className={props.format} onClick={props.onClick} >
+    <button
+      type="button"
+      className={props.format}
+      onClick={props.onClick}
+      aria-label={props.value ? `Square ${props.index + 1}: ${props.value}` : `Square ${props.index + 1}: empty`}
+    >
       {props.value}
     </button>
   );
@@ -13,21 +18,23 @@ function Square(props) {
 class Board extends React.Component {
   renderSquare(i) {
     return (
-      <Square value={this.props.squares[i]} format={this.props.formats[i]} onClick={() => this.props.onClick(i)}/>
+      <Square
+        key={i}
+        index={i}
+        value={this.props.squares[i]}
+        format={this.props.formats[i]}
+        onClick={() => this.props.onClick(i)}
+      />
     );
   }
 
   render() {
-    let table = []
-    for (let row = 0; row < 3; row++) {
-      let rowItem = []
-      for (let col = 0; col < 3; col++) {
-        rowItem.push(this.renderSquare(row * 3 + col))
-      }
-      table.push(<div className="board-row">{rowItem}</div>)
+    let squares = []
+    for (let index = 0; index < 9; index++) {
+      squares.push(this.renderSquare(index))
     }
     return (
-      <div>{table}</div>
+      <div className="board-grid" role="grid" aria-label="Tic tac toe board">{squares}</div>
     );
   }
 }
@@ -144,6 +151,8 @@ class Game extends React.Component {
     const history = this.state.history;
     const current = history[this.state.stepNumber];
     const winner = calculateWinner(current.squares);
+    const isDraw = checkDraw(current.squares);
+    const isRunning = this.isStarted();
 
     const xIsFirst = this.state.xIsFirstSet;
     const moves = history.map((_step, move) => {
@@ -159,14 +168,11 @@ class Game extends React.Component {
         'Go to move ' + move + ' ' + first + ' (' + history[move].motion % 3 + ',' + parseInt(history[move].motion / 3, 10) + ')':
         'Go to game start';
       return (
-          <li key={move}>
-            <button className={stepFormat} onClick={() => this.jumpTo(move)}>{desc}</button>
-          </li>
+        <li key={move} className="history-item">
+          <button type="button" className={stepFormat} onClick={() => this.jumpTo(move)}>{desc}</button>
+        </li>
       );
     });
-
-    let moveHistory = []
-    moveHistory.push(<ol>{moves}</ol>)
 
     let playerStatus;
     if (this.state.xIsPlayer) {
@@ -178,92 +184,128 @@ class Game extends React.Component {
     if (winner) {
       status = 'Winner: ' + winner;
       this.endGame();
-    } else if (checkDraw(current.squares)) {
+    } else if (isDraw) {
       status = 'Draw';
       this.endGame();
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
     }
 
+    let statusTone = 'status-banner';
+    if (winner) {
+      statusTone += ' status-banner-win';
+    } else if (isDraw) {
+      statusTone += ' status-banner-draw';
+    }
+
     return (
-      <div className="game">
-        <table>
-          <tbody>
-            <tr><th>Tic Tac Toe</th></tr>
-            <tr><td>
-              <div className="game-controller">
-                <table>
-                  <thead>
-                    <tr><th>
-                      Game Setting
-                    </th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>
-                      <div onChange={this.setPlayer.bind(this)}>
-                        You are:
-                        <input type="radio" value="0" name="xIsPlayer" checked={!this.state.xIsPlayerSet} disabled={this.isStarted()}/> O
-                        <input type="radio" value="1" name="xIsPlayer" checked={this.state.xIsPlayerSet} disabled={this.isStarted()}/> X
-                      </div>
-                    </td></tr>
-                    <tr><td>
-                      <div onChange={this.setFirst.bind(this)}>
-                        Start first:
-                        <input type="radio" value="0" name="xIsFirst" checked={!this.state.xIsFirstSet} disabled={this.isStarted()}/> O
-                        <input type="radio" value="1" name="xIsFirst" checked={this.state.xIsFirstSet} disabled={this.isStarted()}/> X
-                      </div>
-                    </td></tr>
-                  </tbody>
-                  <thead>
-                    <tr><th>
-                      Game Control
-                    </th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>
-                      <div>
-                        <button className="game-start" onClick={() => this.startGame()} disabled={this.isStarted()}>Start</button>
-                        <button className="game-start" onClick={() => this.endGame()} disabled={!this.isStarted()}>End</button>
-                      </div>
-                    </td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </td></tr>
-            <tr><td>
-              <div className="game-board">
-                <Board squares={current.squares} formats={formats} onClick={(i) => this.handleManualClick(i)} />
-              </div>
-            </td></tr>
-            <tr><td>
-              <div className="game-info">
-                <table>
-                  <thead>
-                    <tr><th>
-                      Status
-                    </th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>
-                      {status}
-                    </td></tr>
-                  </tbody>
-                  <thead>
-                    <tr><th>
-                      History:
-                    </th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>
-                      {moveHistory}
-                    </td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </td></tr>
-          </tbody>
-        </table>
-      </div>
+      <main className="game-shell">
+        <section className="hero-panel">
+          <p className="eyebrow">Arcade Arena</p>
+          <h1>Tic Tac Toe</h1>
+          <p className="hero-copy">Challenge the computer in a brighter retro-inspired board with clearer controls, live match status, and fast rematches.</p>
+          <div className="summary-strip" aria-label="Current game setup">
+            <div className="summary-chip">
+              <span className="summary-label">You play</span>
+              <strong>{playerStatus}</strong>
+            </div>
+            <div className="summary-chip">
+              <span className="summary-label">First turn</span>
+              <strong>{this.state.xIsFirstSet ? 'X' : 'O'}</strong>
+            </div>
+            <div className="summary-chip">
+              <span className="summary-label">Match state</span>
+              <strong>{isRunning ? 'Live' : 'Idle'}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="game-layout">
+          <aside className="panel control-panel">
+            <div className="panel-heading">
+              <p className="panel-kicker">Setup</p>
+              <h2>Game Settings</h2>
+            </div>
+
+            <fieldset className="control-group" disabled={isRunning}>
+              <legend>You are</legend>
+              <label className="choice-pill" htmlFor="play-as-o">
+                <input
+                  id="play-as-o"
+                  type="radio"
+                  value="0"
+                  name="xIsPlayer"
+                  checked={!this.state.xIsPlayerSet}
+                  onChange={this.setPlayer.bind(this)}
+                />
+                <span>O</span>
+              </label>
+              <label className="choice-pill" htmlFor="play-as-x">
+                <input
+                  id="play-as-x"
+                  type="radio"
+                  value="1"
+                  name="xIsPlayer"
+                  checked={this.state.xIsPlayerSet}
+                  onChange={this.setPlayer.bind(this)}
+                />
+                <span>X</span>
+              </label>
+            </fieldset>
+
+            <fieldset className="control-group" disabled={isRunning}>
+              <legend>Start first</legend>
+              <label className="choice-pill" htmlFor="start-as-o">
+                <input
+                  id="start-as-o"
+                  type="radio"
+                  value="0"
+                  name="xIsFirst"
+                  checked={!this.state.xIsFirstSet}
+                  onChange={this.setFirst.bind(this)}
+                />
+                <span>O</span>
+              </label>
+              <label className="choice-pill" htmlFor="start-as-x">
+                <input
+                  id="start-as-x"
+                  type="radio"
+                  value="1"
+                  name="xIsFirst"
+                  checked={this.state.xIsFirstSet}
+                  onChange={this.setFirst.bind(this)}
+                />
+                <span>X</span>
+              </label>
+            </fieldset>
+
+            <div className="panel-heading panel-heading-compact">
+              <p className="panel-kicker">Controls</p>
+              <h2>Match Flow</h2>
+            </div>
+            <div className="action-row">
+              <button type="button" className="action-button action-button-primary" onClick={() => this.startGame()} disabled={isRunning}>Start</button>
+              <button type="button" className="action-button action-button-secondary" onClick={() => this.endGame()} disabled={!isRunning}>End</button>
+            </div>
+          </aside>
+
+          <section className="board-column">
+            <div className={statusTone} aria-live="polite">{status}</div>
+            <div className="board-frame">
+              <Board squares={current.squares} formats={formats} onClick={(i) => this.handleManualClick(i)} />
+            </div>
+          </section>
+
+          <aside className="panel history-panel">
+            <div className="panel-heading">
+              <p className="panel-kicker">Timeline</p>
+              <h2>Move History</h2>
+            </div>
+            <p className="history-copy">Jump to any turn to replay the match and inspect how the board changed.</p>
+            <ol className="history-list">{moves}</ol>
+          </aside>
+        </section>
+      </main>
     );
   }
 }
